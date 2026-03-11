@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**GitHub:** https://github.com/willstables2k-hue/food-costings
+
 ## Commands
 
 ```bash
