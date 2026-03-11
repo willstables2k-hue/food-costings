@@ -30,11 +30,13 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     // Prices not set yet
   }
 
-  const latestCost = costBreakdown?.cost_per_yield_unit ?? null
-  const margin =
-    latestCost && product.selling_price
-      ? ((product.selling_price - latestCost) / product.selling_price) * 100
-      : null
+  const cost = costBreakdown?.cost_per_yield_unit ?? null
+  const wholesaleMargin = cost && product.wholesale_price
+    ? ((product.wholesale_price - cost) / product.wholesale_price) * 100
+    : null
+  const retailMargin = cost && product.retail_price
+    ? ((product.retail_price - cost) / product.retail_price) * 100
+    : null
 
   return (
     <div className="space-y-6">
@@ -44,7 +46,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         action={{ label: 'Edit', href: `/products/${id}/edit` }}
       />
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-5 gap-4">
         <Card>
           <p className="text-sm text-slate-500">Status</p>
           <div className="mt-2">
@@ -54,25 +56,38 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           </div>
         </Card>
         <Card>
-          <p className="text-sm text-slate-500">Cost per unit</p>
-          <p className="text-2xl font-semibold text-slate-900 mt-1">
-            {latestCost !== null ? `£${latestCost.toFixed(4)}` : '—'}
+          <p className="text-sm text-slate-500">Cost / unit</p>
+          <p className="text-xl font-semibold text-slate-900 mt-1">
+            {cost !== null ? `£${cost.toFixed(4)}` : '—'}
           </p>
+          {product.selling_unit && <p className="text-xs text-slate-400 mt-1">{product.selling_unit}</p>}
         </Card>
         <Card>
-          <p className="text-sm text-slate-500">Selling price</p>
-          <p className="text-2xl font-semibold text-slate-900 mt-1">
-            {product.selling_price !== null ? `£${product.selling_price.toFixed(2)}` : '—'}
+          <p className="text-sm text-slate-500">Wholesale price</p>
+          <p className="text-xl font-semibold text-slate-900 mt-1">
+            {product.wholesale_price !== null ? `£${product.wholesale_price.toFixed(2)}` : '—'}
           </p>
-          {product.selling_unit && (
-            <p className="text-xs text-slate-400 mt-1">{product.selling_unit}</p>
-          )}
-        </Card>
-        <Card>
-          <p className="text-sm text-slate-500">Margin</p>
-          <div className="mt-2">
-            <MarginBadge margin={margin} />
+          <div className="mt-1.5">
+            <MarginBadge margin={wholesaleMargin} />
           </div>
+        </Card>
+        <Card>
+          <p className="text-sm text-slate-500">Retail price</p>
+          <p className="text-xl font-semibold text-slate-900 mt-1">
+            {product.retail_price !== null ? `£${product.retail_price.toFixed(2)}` : '—'}
+          </p>
+          <div className="mt-1.5">
+            <MarginBadge margin={retailMargin} />
+          </div>
+        </Card>
+        <Card>
+          <p className="text-sm text-slate-500">Markup (retail)</p>
+          <p className="text-xl font-semibold text-slate-900 mt-1">
+            {cost && product.retail_price
+              ? `${((product.retail_price / cost) * 100 - 100).toFixed(0)}%`
+              : '—'}
+          </p>
+          <p className="text-xs text-slate-400 mt-1">over cost</p>
         </Card>
       </div>
 
@@ -118,7 +133,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
             total_cost: s.total_cost,
             snapshotted_at: s.snapshotted_at.toISOString(),
           }))}
-          sellingPrice={product.selling_price}
+          sellingPrice={product.retail_price}
         />
       </Card>
     </div>

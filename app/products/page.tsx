@@ -28,7 +28,7 @@ export default async function ProductsPage() {
       {products.length === 0 ? (
         <EmptyState
           title="No products yet"
-          description="Create a product by linking a recipe with a selling price."
+          description="Create a product by linking a recipe with wholesale and retail prices."
           action={{ label: '+ New Product', href: '/products/new' }}
         />
       ) : (
@@ -37,41 +37,44 @@ export default async function ProductsPage() {
             <thead>
               <tr className="border-b border-slate-200">
                 <th className="text-left px-6 py-3 font-semibold text-slate-600">Product</th>
-                <th className="text-left px-6 py-3 font-semibold text-slate-600">Recipe</th>
                 <th className="text-right px-6 py-3 font-semibold text-slate-600">Last cost</th>
-                <th className="text-right px-6 py-3 font-semibold text-slate-600">Selling price</th>
-                <th className="text-right px-6 py-3 font-semibold text-slate-600">Margin</th>
+                <th className="text-right px-6 py-3 font-semibold text-slate-600">Wholesale</th>
+                <th className="text-right px-6 py-3 font-semibold text-slate-600">Retail</th>
                 <th className="text-right px-6 py-3 font-semibold text-slate-600">Status</th>
               </tr>
             </thead>
             <tbody>
               {products.map((p) => {
                 const lastSnapshot = p.cost_snapshots[0]
-                const margin =
-                  lastSnapshot && p.selling_price
-                    ? ((p.selling_price - lastSnapshot.total_cost) / p.selling_price) * 100
-                    : null
+                const wholesaleMargin = lastSnapshot && p.wholesale_price
+                  ? ((p.wholesale_price - lastSnapshot.total_cost) / p.wholesale_price) * 100
+                  : null
+                const retailMargin = lastSnapshot && p.retail_price
+                  ? ((p.retail_price - lastSnapshot.total_cost) / p.retail_price) * 100
+                  : null
                 return (
                   <tr key={p.id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="px-6 py-4">
                       <Link href={`/products/${p.id}`} className="font-medium text-slate-900 hover:text-blue-600">
                         {p.name}
                       </Link>
-                    </td>
-                    <td className="px-6 py-4 text-slate-600">
-                      <Link href={`/recipes/${p.recipe_id}`} className="hover:text-blue-600">
-                        {p.recipe.name}
-                      </Link>
+                      <p className="text-xs text-slate-400 mt-0.5">{p.recipe.name}</p>
                     </td>
                     <td className="px-6 py-4 text-right font-mono text-slate-900">
                       {lastSnapshot ? `£${lastSnapshot.total_cost.toFixed(4)}` : '—'}
-                    </td>
-                    <td className="px-6 py-4 text-right font-mono">
-                      {p.selling_price !== null ? `£${p.selling_price.toFixed(2)}` : '—'}
                       {p.selling_unit && <span className="text-slate-400 text-xs ml-1">{p.selling_unit}</span>}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <MarginBadge margin={margin} />
+                      <div className="font-mono text-slate-900">
+                        {p.wholesale_price !== null ? `£${p.wholesale_price.toFixed(2)}` : '—'}
+                      </div>
+                      <MarginBadge margin={wholesaleMargin} />
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="font-mono text-slate-900">
+                        {p.retail_price !== null ? `£${p.retail_price.toFixed(2)}` : '—'}
+                      </div>
+                      <MarginBadge margin={retailMargin} />
                     </td>
                     <td className="px-6 py-4 text-right">
                       <Badge variant={p.is_active ? 'green' : 'gray'}>

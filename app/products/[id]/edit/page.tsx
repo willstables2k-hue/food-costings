@@ -24,7 +24,8 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
           name: product.name,
           description: product.description ?? undefined,
           recipe_id: product.recipe_id,
-          selling_price: product.selling_price ?? undefined,
+          wholesale_price: product.wholesale_price ?? undefined,
+          retail_price: product.retail_price ?? undefined,
           selling_unit: product.selling_unit ?? undefined,
           is_active: product.is_active,
         }}

@@ -7,20 +7,27 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   try {
     const product = await prisma.product.findUnique({
       where: { id: parseInt(id) },
-      select: { recipe_id: true, selling_price: true, selling_unit: true },
+      select: { recipe_id: true, wholesale_price: true, retail_price: true, selling_unit: true },
     })
     if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     const breakdown = await calculateRecipeCost(product.recipe_id, prisma)
-    const margin = product.selling_price
-      ? ((product.selling_price - breakdown.cost_per_yield_unit) / product.selling_price) * 100
+    const cost = breakdown.cost_per_yield_unit
+
+    const wholesale_margin = product.wholesale_price && cost > 0
+      ? ((product.wholesale_price - cost) / product.wholesale_price) * 100
+      : null
+    const retail_margin = product.retail_price && cost > 0
+      ? ((product.retail_price - cost) / product.retail_price) * 100
       : null
 
     return NextResponse.json({
       ...breakdown,
-      selling_price: product.selling_price,
+      wholesale_price: product.wholesale_price,
+      retail_price: product.retail_price,
       selling_unit: product.selling_unit,
-      margin_percent: margin,
+      wholesale_margin,
+      retail_margin,
     })
   } catch (error: unknown) {
     if (error instanceof Error) {

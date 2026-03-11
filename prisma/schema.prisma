@@ -113,17 +113,18 @@ model RecipeComponent {
 }
 
 model Product {
-  id             Int            @id @default(autoincrement())
-  name           String         @unique
-  description    String?
-  recipe_id      Int            @unique
-  selling_price  Float?
-  selling_unit   String?
-  is_active      Boolean        @default(true)
-  created_at     DateTime       @default(now())
-  updated_at     DateTime       @updatedAt
-  recipe         Recipe         @relation(fields: [recipe_id], references: [id])
-  cost_snapshots CostSnapshot[]
+  id               Int            @id @default(autoincrement())
+  name             String         @unique
+  description      String?
+  recipe_id        Int            @unique
+  wholesale_price  Float?
+  retail_price     Float?
+  selling_unit     String?
+  is_active        Boolean        @default(true)
+  created_at       DateTime       @default(now())
+  updated_at       DateTime       @updatedAt
+  recipe           Recipe         @relation(fields: [recipe_id], references: [id])
+  cost_snapshots   CostSnapshot[]
   @@map("products")
 }
 
