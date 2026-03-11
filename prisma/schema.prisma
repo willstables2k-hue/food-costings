@@ -1,0 +1,141 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Supplier {
+  id         Int       @id @default(autoincrement())
+  name       String    @unique
+  contact    String?
+  email      String?
+  phone      String?
+  notes      String?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  invoices   Invoice[]
+  @@map("suppliers")
+}
+
+model Ingredient {
+  id                     Int                      @id @default(autoincrement())
+  name                   String                   @unique
+  description            String?
+  unit                   String
+  current_price_per_unit Float?
+  created_at             DateTime                 @default(now())
+  updated_at             DateTime                 @updatedAt
+  price_history          IngredientPriceHistory[]
+  invoice_line_items     InvoiceLineItem[]
+  recipe_components      RecipeComponent[]
+  @@map("ingredients")
+}
+
+model IngredientPriceHistory {
+  id             Int        @id @default(autoincrement())
+  ingredient_id  Int
+  price_per_unit Float
+  invoice_id     Int?
+  recorded_at    DateTime   @default(now())
+  ingredient     Ingredient @relation(fields: [ingredient_id], references: [id], onDelete: Cascade)
+  invoice        Invoice?   @relation(fields: [invoice_id], references: [id], onDelete: SetNull)
+  @@index([ingredient_id])
+  @@index([ingredient_id, recorded_at])
+  @@map("ingredient_price_history")
+}
+
+model Invoice {
+  id            Int               @id @default(autoincrement())
+  supplier_id   Int
+  invoice_date  DateTime
+  reference     String?
+  notes         String?
+  created_at    DateTime          @default(now())
+  updated_at    DateTime          @updatedAt
+  supplier      Supplier          @relation(fields: [supplier_id], references: [id])
+  line_items    InvoiceLineItem[]
+  price_history IngredientPriceHistory[]
+  @@index([supplier_id])
+  @@index([invoice_date])
+  @@map("invoices")
+}
+
+model InvoiceLineItem {
+  id                       Int        @id @default(autoincrement())
+  invoice_id               Int
+  ingredient_id            Int
+  quantity                 Float
+  purchase_unit            String
+  total_cost               Float
+  price_per_canonical_unit Float?
+  created_at               DateTime   @default(now())
+  invoice                  Invoice    @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+  ingredient               Ingredient @relation(fields: [ingredient_id], references: [id])
+  @@index([invoice_id])
+  @@index([ingredient_id])
+  @@map("invoice_line_items")
+}
+
+model Recipe {
+  id             Int               @id @default(autoincrement())
+  name           String            @unique
+  description    String?
+  is_sub_recipe  Boolean           @default(false)
+  yield_quantity Float             @default(1)
+  yield_unit     String            @default("units")
+  created_at     DateTime          @default(now())
+  updated_at     DateTime          @updatedAt
+  components     RecipeComponent[] @relation("RecipeComponents")
+  used_in        RecipeComponent[] @relation("SubRecipeUsedIn")
+  product        Product?
+  @@map("recipes")
+}
+
+model RecipeComponent {
+  id            Int         @id @default(autoincrement())
+  recipe_id     Int
+  ingredient_id Int?
+  sub_recipe_id Int?
+  quantity      Float
+  unit          String
+  sort_order    Int         @default(0)
+  created_at    DateTime    @default(now())
+  recipe        Recipe      @relation("RecipeComponents", fields: [recipe_id], references: [id], onDelete: Cascade)
+  ingredient    Ingredient? @relation(fields: [ingredient_id], references: [id], onDelete: SetNull)
+  sub_recipe    Recipe?     @relation("SubRecipeUsedIn", fields: [sub_recipe_id], references: [id], onDelete: SetNull)
+  @@index([recipe_id])
+  @@index([ingredient_id])
+  @@index([sub_recipe_id])
+  @@map("recipe_components")
+}
+
+model Product {
+  id             Int            @id @default(autoincrement())
+  name           String         @unique
+  description    String?
+  recipe_id      Int            @unique
+  selling_price  Float?
+  selling_unit   String?
+  is_active      Boolean        @default(true)
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @updatedAt
+  recipe         Recipe         @relation(fields: [recipe_id], references: [id])
+  cost_snapshots CostSnapshot[]
+  @@map("products")
+}
+
+model CostSnapshot {
+  id                       Int      @id @default(autoincrement())
+  product_id               Int
+  total_cost               Float
+  breakdown_json           String
+  triggered_by_invoice_id  Int?
+  snapshotted_at           DateTime @default(now())
+  product                  Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  @@index([product_id])
+  @@index([product_id, snapshotted_at])
+  @@map("cost_snapshots")
+}
