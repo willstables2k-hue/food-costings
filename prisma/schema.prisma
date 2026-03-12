@@ -33,6 +33,7 @@ model Ingredient {
   price_history          IngredientPriceHistory[]
   invoice_line_items     InvoiceLineItem[]
   recipe_components      RecipeComponent[]
+  allergens              IngredientAllergen[]
   @@map("ingredients")
 }
 
@@ -93,7 +94,21 @@ model Recipe {
   components     RecipeComponent[] @relation("RecipeComponents")
   used_in        RecipeComponent[] @relation("SubRecipeUsedIn")
   product        Product?
+  steps          RecipeStep[]
   @@map("recipes")
+}
+
+model RecipeStep {
+  id            Int      @id @default(autoincrement())
+  recipe_id     Int
+  step_number   Int
+  instruction   String
+  photo_url     String?
+  duration_mins Int?
+  created_at    DateTime @default(now())
+  recipe        Recipe   @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
+  @@index([recipe_id])
+  @@map("recipe_steps")
 }
 
 model RecipeComponent {
@@ -141,4 +156,21 @@ model CostSnapshot {
   @@index([product_id])
   @@index([product_id, snapshotted_at])
   @@map("cost_snapshots")
+}
+
+model Allergen {
+  id           Int                  @id @default(autoincrement())
+  key          String               @unique
+  display_name String
+  ingredients  IngredientAllergen[]
+  @@map("allergens")
+}
+
+model IngredientAllergen {
+  ingredient_id Int
+  allergen_id   Int
+  ingredient    Ingredient @relation(fields: [ingredient_id], references: [id], onDelete: Cascade)
+  allergen      Allergen   @relation(fields: [allergen_id], references: [id], onDelete: Cascade)
+  @@id([ingredient_id, allergen_id])
+  @@map("ingredient_allergens")
 }

@@ -5,3 +5,16 @@
 body {
   @apply bg-slate-50 text-slate-900;
 }
+
+@media print {
+  aside,
+  nav {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+  .print-hidden {
+    display: none !important;
+  }
+}
