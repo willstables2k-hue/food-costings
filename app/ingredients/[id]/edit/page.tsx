@@ -17,6 +17,8 @@ export default async function EditIngredientPage({ params }: { params: Promise<{
           name: ingredient.name,
           description: ingredient.description ?? undefined,
           unit: ingredient.unit,
+          yield_percentage: ingredient.yield_percentage ?? 100,
+          prep_loss_notes: ingredient.prep_loss_notes ?? undefined,
         }}
       />
     </div>

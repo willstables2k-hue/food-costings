@@ -26,6 +26,8 @@ model Ingredient {
   description            String?
   unit                   String
   current_price_per_unit Float?
+  yield_percentage       Float?                   @default(100)
+  prep_loss_notes        String?
   created_at             DateTime                 @default(now())
   updated_at             DateTime                 @updatedAt
   price_history          IngredientPriceHistory[]

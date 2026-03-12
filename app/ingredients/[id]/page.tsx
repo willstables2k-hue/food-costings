@@ -27,26 +27,49 @@ export default async function IngredientPage({ params }: { params: Promise<{ id:
         action={{ label: 'Edit', href: `/ingredients/${id}/edit` }}
       />
 
-      <div className="grid grid-cols-3 gap-4">
-        <Card>
-          <p className="text-sm text-slate-500">Current price</p>
-          <p className="text-2xl font-semibold text-slate-900 mt-1">
-            {ingredient.current_price_per_unit !== null
-              ? `£${ingredient.current_price_per_unit.toFixed(4)}`
-              : '—'}
-          </p>
-          <p className="text-xs text-slate-400 mt-1">per {ingredient.unit}</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-slate-500">Canonical unit</p>
-          <p className="text-2xl font-semibold text-slate-900 mt-1">{ingredient.unit}</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-slate-500">Used in</p>
-          <p className="text-2xl font-semibold text-slate-900 mt-1">{ingredient._count.recipe_components}</p>
-          <p className="text-xs text-slate-400 mt-1">{ingredient._count.recipe_components === 1 ? 'recipe' : 'recipes'}</p>
-        </Card>
-      </div>
+      {(() => {
+        const yp = ingredient.yield_percentage ?? 100
+        const yieldColor = yp >= 95 ? 'bg-green-100 text-green-700' : yp >= 75 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+        const effectivePrice = ingredient.current_price_per_unit !== null && yp > 0
+          ? ingredient.current_price_per_unit / (yp / 100)
+          : null
+        return (
+          <div className="grid grid-cols-4 gap-4">
+            <Card>
+              <p className="text-sm text-slate-500">Current price</p>
+              <p className="text-2xl font-semibold text-slate-900 mt-1">
+                {ingredient.current_price_per_unit !== null
+                  ? `£${ingredient.current_price_per_unit.toFixed(4)}`
+                  : '—'}
+              </p>
+              <p className="text-xs text-slate-400 mt-1">per {ingredient.unit}</p>
+            </Card>
+            <Card>
+              <p className="text-sm text-slate-500">Yield</p>
+              <div className="mt-2">
+                <span className={`inline-flex items-center px-2.5 py-1 rounded text-sm font-semibold ${yieldColor}`}>
+                  {yp % 1 === 0 ? yp.toFixed(0) : yp.toFixed(1)}%
+                </span>
+              </div>
+              {ingredient.prep_loss_notes && (
+                <p className="text-xs text-slate-400 mt-1.5">{ingredient.prep_loss_notes}</p>
+              )}
+            </Card>
+            <Card>
+              <p className="text-sm text-slate-500">Effective cost</p>
+              <p className="text-2xl font-semibold text-slate-900 mt-1">
+                {effectivePrice !== null ? `£${effectivePrice.toFixed(4)}` : '—'}
+              </p>
+              <p className="text-xs text-slate-400 mt-1">per {ingredient.unit} usable</p>
+            </Card>
+            <Card>
+              <p className="text-sm text-slate-500">Used in</p>
+              <p className="text-2xl font-semibold text-slate-900 mt-1">{ingredient._count.recipe_components}</p>
+              <p className="text-xs text-slate-400 mt-1">{ingredient._count.recipe_components === 1 ? 'recipe' : 'recipes'}</p>
+            </Card>
+          </div>
+        )
+      })()}
 
       <Card>
         <h2 className="text-base font-semibold text-slate-900 mb-4">Price History</h2>

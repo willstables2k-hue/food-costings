@@ -30,9 +30,9 @@ export function IngredientForm({ defaultValues, ingredientId }: IngredientFormPr
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<IngredientFormData>({
+  } = useForm({
     resolver: zodResolver(ingredientSchema),
-    defaultValues,
+    defaultValues: { yield_percentage: 100, ...defaultValues },
   })
 
   const onSubmit = async (data: IngredientFormData) => {
@@ -79,6 +79,26 @@ export function IngredientForm({ defaultValues, ingredientId }: IngredientFormPr
       <p className="text-xs text-slate-500">
         The canonical unit is how prices are stored. Invoice quantities can use different units (e.g. buy in kg, store price per g).
       </p>
+      <Input
+        id="yield_percentage"
+        label="Yield %"
+        type="number"
+        min="0"
+        max="100"
+        step="0.1"
+        placeholder="100"
+        error={errors.yield_percentage?.message}
+        {...register('yield_percentage', { valueAsNumber: true })}
+      />
+      <p className="text-xs text-slate-500">
+        e.g. 80% = buy 1 kg, use 800 g after peeling. Affects the effective cost in recipes.
+      </p>
+      <Input
+        id="prep_loss_notes"
+        label="Prep loss notes"
+        placeholder="e.g. peeled &amp; trimmed"
+        {...register('prep_loss_notes')}
+      />
       <div className="flex gap-3">
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Saving…' : ingredientId ? 'Update Ingredient' : 'Create Ingredient'}

@@ -42,7 +42,11 @@ export async function calculateRecipeCost(
   for (const component of recipe.components) {
     if (component.ingredient_id && component.ingredient) {
       const ingredient = component.ingredient
-      const unitCost = ingredient.current_price_per_unit ?? 0
+      const rawUnitCost = ingredient.current_price_per_unit ?? 0
+      const yieldFactor = (ingredient.yield_percentage ?? 100) > 0
+        ? (ingredient.yield_percentage ?? 100) / 100
+        : 1
+      const unitCost = rawUnitCost / yieldFactor
 
       let conversionFactor = 1
       try {
