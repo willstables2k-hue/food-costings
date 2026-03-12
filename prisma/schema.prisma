@@ -34,6 +34,7 @@ model Ingredient {
   invoice_line_items     InvoiceLineItem[]
   recipe_components      RecipeComponent[]
   allergens              IngredientAllergen[]
+  stock_count_lines      StockCountLine[]
   @@map("ingredients")
 }
 
@@ -173,4 +174,27 @@ model IngredientAllergen {
   allergen      Allergen   @relation(fields: [allergen_id], references: [id], onDelete: Cascade)
   @@id([ingredient_id, allergen_id])
   @@map("ingredient_allergens")
+}
+
+model StockCount {
+  id          Int              @id @default(autoincrement())
+  name        String
+  status      String           @default("draft")
+  counted_at  DateTime         @default(now())
+  notes       String?
+  created_at  DateTime         @default(now())
+  lines       StockCountLine[]
+  @@map("stock_counts")
+}
+
+model StockCountLine {
+  id               Int         @id @default(autoincrement())
+  stock_count_id   Int
+  ingredient_id    Int
+  counted_quantity Float
+  unit             String
+  count            StockCount  @relation(fields: [stock_count_id], references: [id], onDelete: Cascade)
+  ingredient       Ingredient  @relation(fields: [ingredient_id], references: [id])
+  @@index([stock_count_id])
+  @@map("stock_count_lines")
 }

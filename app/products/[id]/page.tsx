@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { calculateRecipeCost } from '@/lib/cost-calculator'
+import { calculateRecipeAllergens } from '@/lib/allergen-calculator'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -28,6 +29,20 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     costBreakdown = await calculateRecipeCost(product.recipe_id, prisma)
   } catch {
     // Prices not set yet
+  }
+
+  let allergenKeys: Set<string> = new Set()
+  let allergenDisplayMap: Record<string, string> = {}
+  try {
+    allergenKeys = await calculateRecipeAllergens(product.recipe_id, prisma)
+    if (allergenKeys.size > 0) {
+      const allergens = await prisma.allergen.findMany({
+        where: { key: { in: Array.from(allergenKeys) } },
+      })
+      allergenDisplayMap = Object.fromEntries(allergens.map((a) => [a.key, a.display_name]))
+    }
+  } catch {
+    // Allergen calculation failed — skip display
   }
 
   const cost = costBreakdown?.cost_per_yield_unit ?? null
@@ -100,6 +115,22 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           yields {product.recipe.yield_quantity} {product.recipe.yield_unit}
         </span>
       </Card>
+
+      {allergenKeys.size > 0 && (
+        <Card>
+          <h2 className="text-base font-semibold text-slate-900 mb-3">Allergens</h2>
+          <div className="flex flex-wrap gap-2">
+            {Array.from(allergenKeys).sort().map((key) => (
+              <span
+                key={key}
+                className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800"
+              >
+                ⚠️ {allergenDisplayMap[key] ?? key}
+              </span>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {costBreakdown && (
         <Card>

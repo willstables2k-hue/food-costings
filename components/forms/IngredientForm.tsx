@@ -19,21 +19,40 @@ const UNIT_OPTIONS = [
   { value: 'dozen', label: 'Dozen' },
 ]
 
+interface Allergen {
+  id: number
+  key: string
+  display_name: string
+}
+
 interface IngredientFormProps {
   defaultValues?: Partial<IngredientFormData>
   ingredientId?: number
+  allergens?: Allergen[]
 }
 
-export function IngredientForm({ defaultValues, ingredientId }: IngredientFormProps) {
+export function IngredientForm({ defaultValues, ingredientId, allergens = [] }: IngredientFormProps) {
   const router = useRouter()
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(ingredientSchema),
-    defaultValues: { yield_percentage: 100, ...defaultValues },
+    defaultValues: { yield_percentage: 100, allergen_ids: [] as number[], ...defaultValues },
   })
+
+  const selectedAllergenIds = watch('allergen_ids') ?? []
+
+  const toggleAllergen = (id: number) => {
+    const current = selectedAllergenIds
+    const next = current.includes(id)
+      ? current.filter((aid: number) => aid !== id)
+      : [...current, id]
+    setValue('allergen_ids', next, { shouldDirty: true })
+  }
 
   const onSubmit = async (data: IngredientFormData) => {
     const url = ingredientId ? `/api/ingredients/${ingredientId}` : '/api/ingredients'
@@ -99,6 +118,32 @@ export function IngredientForm({ defaultValues, ingredientId }: IngredientFormPr
         placeholder="e.g. peeled &amp; trimmed"
         {...register('prep_loss_notes')}
       />
+
+      {allergens.length > 0 && (
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Allergens</label>
+          <div className="grid grid-cols-3 gap-2">
+            {allergens.map((allergen) => {
+              const isSelected = selectedAllergenIds.includes(allergen.id)
+              return (
+                <button
+                  key={allergen.id}
+                  type="button"
+                  onClick={() => toggleAllergen(allergen.id)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    isSelected
+                      ? 'bg-amber-100 text-amber-800 border-amber-300'
+                      : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  {isSelected && '⚠️ '}{allergen.display_name}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-3">
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Saving…' : ingredientId ? 'Update Ingredient' : 'Create Ingredient'}

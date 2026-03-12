@@ -14,6 +14,7 @@ export default async function IngredientPage({ params }: { params: Promise<{ id:
         take: 50,
         include: { invoice: { select: { id: true, reference: true, invoice_date: true } } },
       },
+      allergens: { include: { allergen: true } },
       _count: { select: { recipe_components: true } },
     },
   })
@@ -70,6 +71,22 @@ export default async function IngredientPage({ params }: { params: Promise<{ id:
           </div>
         )
       })()}
+
+      {ingredient.allergens.length > 0 && (
+        <Card>
+          <h2 className="text-base font-semibold text-slate-900 mb-3">Allergens</h2>
+          <div className="flex flex-wrap gap-2">
+            {ingredient.allergens.map((ia) => (
+              <span
+                key={ia.allergen.id}
+                className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800"
+              >
+                ⚠️ {ia.allergen.display_name}
+              </span>
+            ))}
+          </div>
+        </Card>
+      )}
 
       <Card>
         <h2 className="text-base font-semibold text-slate-900 mb-4">Price History</h2>

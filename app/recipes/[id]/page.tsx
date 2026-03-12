@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { calculateRecipeCost } from '@/lib/cost-calculator'
+import { calculateRecipeAllergens } from '@/lib/allergen-calculator'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -29,6 +30,20 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
     costBreakdown = await calculateRecipeCost(recipe.id, prisma)
   } catch {
     // Prices not set yet — cost can't be calculated
+  }
+
+  let allergenKeys: Set<string> = new Set()
+  let allergenDisplayMap: Record<string, string> = {}
+  try {
+    allergenKeys = await calculateRecipeAllergens(recipe.id, prisma)
+    if (allergenKeys.size > 0) {
+      const allergens = await prisma.allergen.findMany({
+        where: { key: { in: Array.from(allergenKeys) } },
+      })
+      allergenDisplayMap = Object.fromEntries(allergens.map((a) => [a.key, a.display_name]))
+    }
+  } catch {
+    // Allergen calculation failed — skip display
   }
 
   const printComponents = recipe.components.map((c) => ({
@@ -98,6 +113,22 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
             <Link href={`/products/${recipe.product.id}`} className="font-medium text-slate-900 hover:text-blue-600">
               {recipe.product.name}
             </Link>
+          </Card>
+        )}
+
+        {allergenKeys.size > 0 && (
+          <Card>
+            <h2 className="text-base font-semibold text-slate-900 mb-3">Allergens</h2>
+            <div className="flex flex-wrap gap-2">
+              {Array.from(allergenKeys).sort().map((key) => (
+                <span
+                  key={key}
+                  className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800"
+                >
+                  ⚠️ {allergenDisplayMap[key] ?? key}
+                </span>
+              ))}
+            </div>
           </Card>
         )}
 

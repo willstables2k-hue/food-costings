@@ -10,6 +10,7 @@ export const ingredientSchema = z.object({
     .max(100, 'Must be 100 or below')
     .default(100),
   prep_loss_notes: z.string().optional(),
+  allergen_ids: z.array(z.number().int().positive()).default([]),
 })
 
 export type IngredientFormData = z.infer<typeof ingredientSchema>

@@ -12,8 +12,26 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const data = ingredientSchema.parse(body)
-    const ingredient = await prisma.ingredient.create({ data })
+    const { allergen_ids, ...data } = ingredientSchema.parse(body)
+
+    const ingredient = await prisma.$transaction(async (tx) => {
+      const created = await tx.ingredient.create({ data })
+
+      if (allergen_ids.length > 0) {
+        await tx.ingredientAllergen.createMany({
+          data: allergen_ids.map((allergen_id) => ({
+            ingredient_id: created.id,
+            allergen_id,
+          })),
+        })
+      }
+
+      return tx.ingredient.findUnique({
+        where: { id: created.id },
+        include: { allergens: { include: { allergen: true } } },
+      })
+    })
+
     return NextResponse.json(ingredient, { status: 201 })
   } catch (error: unknown) {
     if (error instanceof Error) {

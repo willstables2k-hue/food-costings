@@ -10,6 +10,7 @@ const navItems = [
   { href: '/ingredients', label: 'Ingredients', icon: '🧂' },
   { href: '/invoices', label: 'Invoices', icon: '🧾' },
   { href: '/suppliers', label: 'Suppliers', icon: '🏭' },
+  { href: '/stockcounts', label: 'Stock Counts', icon: '🔢' },
 ]
 
 export function Sidebar() {

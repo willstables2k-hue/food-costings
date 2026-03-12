@@ -12,6 +12,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         take: 50,
         include: { invoice: { select: { id: true, reference: true, invoice_date: true } } },
       },
+      allergens: {
+        include: { allergen: true },
+      },
       _count: { select: { recipe_components: true } },
     },
   })
@@ -23,8 +26,28 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const { id } = await params
   try {
     const body = await request.json()
-    const data = ingredientSchema.parse(body)
-    const ingredient = await prisma.ingredient.update({ where: { id: parseInt(id) }, data })
+    const { allergen_ids, ...data } = ingredientSchema.parse(body)
+    const ingredientId = parseInt(id)
+
+    const ingredient = await prisma.$transaction(async (tx) => {
+      await tx.ingredient.update({ where: { id: ingredientId }, data })
+
+      await tx.ingredientAllergen.deleteMany({ where: { ingredient_id: ingredientId } })
+      if (allergen_ids.length > 0) {
+        await tx.ingredientAllergen.createMany({
+          data: allergen_ids.map((allergen_id) => ({
+            ingredient_id: ingredientId,
+            allergen_id,
+          })),
+        })
+      }
+
+      return tx.ingredient.findUnique({
+        where: { id: ingredientId },
+        include: { allergens: { include: { allergen: true } } },
+      })
+    })
+
     return NextResponse.json(ingredient)
   } catch {
     return NextResponse.json({ error: 'Failed to update ingredient' }, { status: 500 })
