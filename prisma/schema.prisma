@@ -28,6 +28,8 @@ model Ingredient {
   current_price_per_unit Float?
   yield_percentage       Float?                   @default(100)
   prep_loss_notes        String?
+  par_level              Float?
+  par_unit               String?
   created_at             DateTime                 @default(now())
   updated_at             DateTime                 @updatedAt
   price_history          IngredientPriceHistory[]
@@ -35,6 +37,7 @@ model Ingredient {
   recipe_components      RecipeComponent[]
   allergens              IngredientAllergen[]
   stock_count_lines      StockCountLine[]
+  waste_logs             WasteLog[]
   @@map("ingredients")
 }
 
@@ -96,6 +99,7 @@ model Recipe {
   used_in        RecipeComponent[] @relation("SubRecipeUsedIn")
   product        Product?
   steps          RecipeStep[]
+  waste_logs     WasteLog[]
   @@map("recipes")
 }
 
@@ -197,4 +201,20 @@ model StockCountLine {
   ingredient       Ingredient  @relation(fields: [ingredient_id], references: [id])
   @@index([stock_count_id])
   @@map("stock_count_lines")
+}
+
+model WasteLog {
+  id            Int         @id @default(autoincrement())
+  ingredient_id Int?
+  recipe_id     Int?
+  quantity      Float
+  unit          String
+  reason        String
+  notes         String?
+  cost_at_log   Float?
+  logged_at     DateTime    @default(now())
+  ingredient    Ingredient? @relation(fields: [ingredient_id], references: [id], onDelete: SetNull)
+  recipe        Recipe?     @relation(fields: [recipe_id], references: [id], onDelete: SetNull)
+  @@index([logged_at])
+  @@map("waste_logs")
 }

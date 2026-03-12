@@ -27,6 +27,8 @@ export default async function EditIngredientPage({ params }: { params: Promise<{
           yield_percentage: ingredient.yield_percentage ?? 100,
           prep_loss_notes: ingredient.prep_loss_notes ?? undefined,
           allergen_ids: ingredient.allergens.map((a) => a.allergen_id),
+          par_level: ingredient.par_level ?? undefined,
+          par_unit: ingredient.par_unit ?? undefined,
         }}
       />
     </div>

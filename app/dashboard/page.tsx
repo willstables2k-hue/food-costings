@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { calculateRecipeCost } from '@/lib/cost-calculator'
+import { getIngredientStockLevels } from '@/lib/stock-calculator'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -33,7 +34,16 @@ async function getDashboardData() {
 }
 
 export default async function DashboardPage() {
-  const items = await getDashboardData()
+  const [items, stockLevels] = await Promise.all([
+    getDashboardData(),
+    getIngredientStockLevels(prisma),
+  ])
+
+  const stockValues = Array.from(stockLevels.values())
+  const criticalCount = stockValues.filter((s) => s.status === 'critical').length
+  const lowCount = stockValues.filter((s) => s.status === 'low').length
+  const noCountExists = stockValues.length > 0 && stockValues.every((s) => s.status === 'no_count')
+  const hasParIngredients = stockValues.length > 0
 
   // Summary stats
   const withCost = items.filter((i) => i.cost_per_unit !== null)
@@ -111,6 +121,51 @@ export default async function DashboardPage() {
               </p>
             </Card>
           </div>
+
+          {/* Low stock alert widget */}
+          {hasParIngredients && (
+            <Card className={criticalCount > 0 ? 'border-red-200 bg-red-50' : lowCount > 0 ? 'border-amber-200 bg-amber-50' : 'border-green-200 bg-green-50'}>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-slate-700 mb-2">Stock Levels</p>
+                  {noCountExists ? (
+                    <p className="text-sm text-slate-600">
+                      No stock count submitted yet.{' '}
+                      <Link href="/stockcounts/new" className="text-blue-600 hover:underline">Record a count</Link>{' '}
+                      to see alerts.
+                    </p>
+                  ) : criticalCount === 0 && lowCount === 0 ? (
+                    <p className="text-sm text-green-700">All tracked ingredients are above par level.</p>
+                  ) : (
+                    <div className="flex gap-4">
+                      {criticalCount > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">Critical</span>
+                          <span className="text-sm font-bold text-red-700">{criticalCount}</span>
+                          <span className="text-xs text-slate-500">ingredient{criticalCount !== 1 ? 's' : ''}</span>
+                        </div>
+                      )}
+                      {lowCount > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Low</span>
+                          <span className="text-sm font-bold text-amber-700">{lowCount}</span>
+                          <span className="text-xs text-slate-500">ingredient{lowCount !== 1 ? 's' : ''}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {!noCountExists && (criticalCount > 0 || lowCount > 0) && (
+                  <Link
+                    href="/ingredients?filter=low"
+                    className="text-xs font-medium text-slate-600 hover:text-slate-900 border border-slate-300 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 transition-colors shrink-0 ml-4"
+                  >
+                    View low stock →
+                  </Link>
+                )}
+              </div>
+            </Card>
+          )}
 
           {/* Main table */}
           <Card padding="none">

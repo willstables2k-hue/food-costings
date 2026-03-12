@@ -119,6 +119,30 @@ export function IngredientForm({ defaultValues, ingredientId, allergens = [] }: 
         {...register('prep_loss_notes')}
       />
 
+      <div className="border-t border-slate-200 pt-4">
+        <p className="text-sm font-medium text-slate-700 mb-1">Par Level</p>
+        <p className="text-xs text-slate-500 mb-3">Set the minimum stock level you want to keep on hand.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            id="par_level"
+            label="Par level quantity"
+            type="number"
+            min="0"
+            step="0.001"
+            placeholder="e.g. 5"
+            error={errors.par_level?.message}
+            {...register('par_level', { valueAsNumber: true, setValueAs: (v) => (v === '' || isNaN(v) ? null : Number(v)) })}
+          />
+          <Select
+            id="par_unit"
+            label="Par unit"
+            placeholder="Same as canonical unit"
+            options={UNIT_OPTIONS}
+            {...register('par_unit')}
+          />
+        </div>
+      </div>
+
       {allergens.length > 0 && (
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">Allergens</label>
