@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { InvoiceForm } from '@/components/forms/InvoiceForm'
+import { InvoiceEntryToggle } from '@/components/forms/InvoiceEntryToggle'
 
 export default async function NewInvoicePage() {
   const [suppliers, ingredients] = await Promise.all([
@@ -11,7 +11,7 @@ export default async function NewInvoicePage() {
   return (
     <div>
       <PageHeader title="New Invoice" />
-      <InvoiceForm suppliers={suppliers} ingredients={ingredients} />
+      <InvoiceEntryToggle suppliers={suppliers} ingredients={ingredients} />
     </div>
   )
 }
