@@ -9,6 +9,18 @@ const nextConfig = {
       'bcryptjs',
     ],
   },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = [
+        ...(Array.isArray(config.externals) ? config.externals : []),
+        '@libsql/client',
+        '@prisma/adapter-libsql',
+        '@prisma/client',
+        'bcryptjs',
+      ]
+    }
+    return config
+  },
 };
 
 export default nextConfig;
