@@ -13,8 +13,9 @@ export const authConfig: NextAuthConfig = {
       const isLoggedIn = !!auth?.user
       const pathname = nextUrl.pathname
 
-      // Always allow auth API and login page
+      // Always allow auth API, login page, and debug endpoints
       if (pathname.startsWith('/api/auth')) return true
+      if (pathname.startsWith('/api/debug-')) return true
       if (pathname === '/login') {
         // Redirect logged-in users away from login
         if (isLoggedIn) return Response.redirect(new URL('/dashboard', nextUrl))
