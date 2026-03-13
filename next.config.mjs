@@ -1,7 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    serverComponentsExternalPackages: ['pdf-parse'],
+    serverComponentsExternalPackages: [
+      'pdf-parse',
+      '@prisma/client',
+      '@prisma/adapter-libsql',
+      '@libsql/client',
+      'bcryptjs',
+    ],
   },
 };
 
