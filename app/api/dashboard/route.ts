@@ -16,7 +16,7 @@ export async function GET() {
   })
 
   const result = await Promise.all(
-    products.map(async (product) => {
+    products.map(async (product: typeof products[number]) => {
       let cost_per_unit: number | null = null
       let wholesale_margin: number | null = null
       let retail_margin: number | null = null
