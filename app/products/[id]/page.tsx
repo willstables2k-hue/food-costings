@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { calculateRecipeCost } from '@/lib/cost-calculator'
 import { calculateRecipeAllergens } from '@/lib/allergen-calculator'
+import { calculateMenuEngineering, CATEGORY_META } from '@/lib/menu-engineer'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -30,6 +31,18 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   } catch {
     // Prices not set yet
   }
+
+  // Menu engineering category (last 30 days)
+  let meCategory: { label: string; emoji: string; description: string; action: string } | null = null
+  try {
+    const now = new Date()
+    const thirtyDaysAgo = new Date(now)
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    thirtyDaysAgo.setHours(0, 0, 0, 0)
+    const meResult = await calculateMenuEngineering(thirtyDaysAgo, now, prisma)
+    const meProduct = meResult.products.find((p) => p.product_id === product.id)
+    if (meProduct) meCategory = CATEGORY_META[meProduct.category]
+  } catch { /* skip if no sales data */ }
 
   let allergenKeys: Set<string> = new Set()
   let allergenDisplayMap: Record<string, string> = {}
@@ -61,7 +74,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
         action={{ label: 'Edit', href: `/products/${id}/edit` }}
       />
 
-      <div className="grid grid-cols-5 gap-4">
+      <div className={`grid gap-4 ${meCategory ? 'grid-cols-6' : 'grid-cols-5'}`}>
         <Card>
           <p className="text-sm text-slate-500">Status</p>
           <div className="mt-2">
@@ -104,6 +117,14 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           </p>
           <p className="text-xs text-slate-400 mt-1">over cost</p>
         </Card>
+        {meCategory && (
+          <Card>
+            <p className="text-sm text-slate-500">Menu category</p>
+            <p className="text-xl mt-1">{meCategory.emoji}</p>
+            <p className="text-sm font-semibold text-slate-900 mt-0.5">{meCategory.label}</p>
+            <p className="text-xs text-slate-400 mt-0.5 leading-tight">{meCategory.action}</p>
+          </Card>
+        )}
       </div>
 
       <Card>

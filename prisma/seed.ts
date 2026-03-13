@@ -1,5 +1,6 @@
 import { PrismaLibSql } from '@prisma/adapter-libsql'
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const adapter = new PrismaLibSql({ url: process.env.DATABASE_URL! })
 const prisma = new PrismaClient({ adapter })
@@ -30,6 +31,20 @@ async function main() {
     })
   }
   console.log(`Seeded ${ALLERGENS.length} allergens`)
+
+  // Seed initial owner account
+  const passwordHash = await bcrypt.hash('changeme123', 12)
+  await prisma.user.upsert({
+    where: { email: 'admin@restaurant.com' },
+    update: {},
+    create: {
+      email: 'admin@restaurant.com',
+      name: 'Admin',
+      password: passwordHash,
+      role: 'owner',
+    },
+  })
+  console.log('Seeded owner account: admin@restaurant.com / changeme123')
 }
 
 main()

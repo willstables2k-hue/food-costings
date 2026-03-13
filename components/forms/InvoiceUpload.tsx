@@ -264,7 +264,7 @@ export function InvoiceUpload({ suppliers, ingredients }: { suppliers: Supplier[
         <Card>
           <h2 className="text-base font-semibold text-slate-900 mb-1">Line Items</h2>
           <p className="text-xs text-slate-500 mb-4">
-            Match each line item to an ingredient. Unmatched rows (set to "skip") will not be saved.
+            Match each line item to an ingredient. Unmatched rows (set to &quot;skip&quot;) will not be saved.
           </p>
 
           <div className="space-y-3">

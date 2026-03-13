@@ -7,6 +7,61 @@ datasource db {
   provider = "sqlite"
 }
 
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("chef")
+  is_active     Boolean   @default(true)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
 model Supplier {
   id         Int       @id @default(autoincrement())
   name       String    @unique
@@ -16,7 +71,8 @@ model Supplier {
   notes      String?
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
-  invoices   Invoice[]
+  invoices         Invoice[]
+  purchase_orders  PurchaseOrder[]
   @@map("suppliers")
 }
 
@@ -37,6 +93,7 @@ model Ingredient {
   recipe_components      RecipeComponent[]
   allergens              IngredientAllergen[]
   stock_count_lines      StockCountLine[]
+  purchase_order_lines   PurchaseOrderLine[]
   waste_logs             WasteLog[]
   @@map("ingredients")
 }
@@ -147,7 +204,20 @@ model Product {
   updated_at       DateTime       @updatedAt
   recipe           Recipe         @relation(fields: [recipe_id], references: [id])
   cost_snapshots   CostSnapshot[]
+  sales_entries    SalesEntry[]
   @@map("products")
+}
+
+model SalesEntry {
+  id          Int      @id @default(autoincrement())
+  product_id  Int
+  quantity    Float
+  period_date DateTime
+  created_at  DateTime @default(now())
+  product     Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  @@index([period_date])
+  @@index([product_id])
+  @@map("sales_entries")
 }
 
 model CostSnapshot {
@@ -217,4 +287,31 @@ model WasteLog {
   recipe        Recipe?     @relation(fields: [recipe_id], references: [id], onDelete: SetNull)
   @@index([logged_at])
   @@map("waste_logs")
+}
+
+model PurchaseOrder {
+  id                Int                @id @default(autoincrement())
+  supplier_id       Int
+  status            String             @default("draft")
+  expected_delivery DateTime?
+  notes             String?
+  created_at        DateTime           @default(now())
+  updated_at        DateTime           @updatedAt
+  supplier          Supplier           @relation(fields: [supplier_id], references: [id])
+  lines             PurchaseOrderLine[]
+  @@index([supplier_id])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderLine {
+  id                Int           @id @default(autoincrement())
+  purchase_order_id Int
+  ingredient_id     Int
+  quantity          Float
+  unit              String
+  unit_price        Float?
+  order             PurchaseOrder @relation(fields: [purchase_order_id], references: [id], onDelete: Cascade)
+  ingredient        Ingredient    @relation(fields: [ingredient_id], references: [id])
+  @@index([purchase_order_id])
+  @@map("purchase_order_lines")
 }

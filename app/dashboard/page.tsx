@@ -2,10 +2,36 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { calculateRecipeCost } from '@/lib/cost-calculator'
 import { getIngredientStockLevels } from '@/lib/stock-calculator'
+import { calculateMenuEngineering, CATEGORY_META } from '@/lib/menu-engineer'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { MarginBadge } from '@/components/cost/MarginBadge'
+
+async function getWasteStats() {
+  const now = new Date()
+  const weekAgo = new Date(now)
+  weekAgo.setDate(weekAgo.getDate() - 7)
+  const twoWeeksAgo = new Date(now)
+  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14)
+
+  const [thisWeek, lastWeek] = await Promise.all([
+    prisma.wasteLog.findMany({
+      where: { logged_at: { gte: weekAgo } },
+      select: { cost_at_log: true },
+    }),
+    prisma.wasteLog.findMany({
+      where: { logged_at: { gte: twoWeeksAgo, lt: weekAgo } },
+      select: { cost_at_log: true },
+    }),
+  ])
+
+  const thisWeekCost = thisWeek.reduce((s, l) => s + (l.cost_at_log ?? 0), 0)
+  const lastWeekCost = lastWeek.reduce((s, l) => s + (l.cost_at_log ?? 0), 0)
+  const entries = thisWeek.length
+
+  return { thisWeekCost, lastWeekCost, entries }
+}
 
 async function getDashboardData() {
   const products = await prisma.product.findMany({
@@ -33,10 +59,24 @@ async function getDashboardData() {
   return rows
 }
 
+async function getMenuEngineeringSummary() {
+  const now = new Date()
+  const thirtyDaysAgo = new Date(now)
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  thirtyDaysAgo.setHours(0, 0, 0, 0)
+  try {
+    return await calculateMenuEngineering(thirtyDaysAgo, now, prisma)
+  } catch {
+    return null
+  }
+}
+
 export default async function DashboardPage() {
-  const [items, stockLevels] = await Promise.all([
+  const [items, stockLevels, wasteStats, meResult] = await Promise.all([
     getDashboardData(),
     getIngredientStockLevels(prisma),
+    getWasteStats(),
+    getMenuEngineeringSummary(),
   ])
 
   const stockValues = Array.from(stockLevels.values())
@@ -166,6 +206,76 @@ export default async function DashboardPage() {
               </div>
             </Card>
           )}
+
+          {/* Waste this week */}
+          <Card>
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-700 mb-1">Waste this week</p>
+                <p className="text-2xl font-bold text-slate-900">
+                  £{wasteStats.thisWeekCost.toFixed(2)}
+                </p>
+                <p className="text-xs text-slate-400 mt-1">
+                  {wasteStats.entries} {wasteStats.entries === 1 ? 'entry' : 'entries'}
+                  {wasteStats.lastWeekCost > 0 && (
+                    <>
+                      {' · '}
+                      {wasteStats.thisWeekCost <= wasteStats.lastWeekCost ? (
+                        <span className="text-green-600">
+                          ↓ {((1 - wasteStats.thisWeekCost / wasteStats.lastWeekCost) * 100).toFixed(0)}% vs last week
+                        </span>
+                      ) : (
+                        <span className="text-red-600">
+                          ↑ {((wasteStats.thisWeekCost / wasteStats.lastWeekCost - 1) * 100).toFixed(0)}% vs last week
+                        </span>
+                      )}
+                    </>
+                  )}
+                  {wasteStats.lastWeekCost === 0 && wasteStats.thisWeekCost > 0 && (
+                    <>{' · '}<span className="text-slate-400">no data last week</span></>
+                  )}
+                </p>
+              </div>
+              <Link
+                href="/waste"
+                className="text-xs font-medium text-slate-600 hover:text-slate-900 border border-slate-300 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 transition-colors shrink-0 ml-4"
+              >
+                View waste log →
+              </Link>
+            </div>
+          </Card>
+
+          {/* Menu Engineering summary */}
+          {meResult && meResult.products.length > 0 && (() => {
+            const cats = meResult.products.reduce(
+              (acc, p) => { acc[p.category] = (acc[p.category] ?? 0) + 1; return acc },
+              {} as Record<string, number>
+            )
+            return (
+              <Card>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700 mb-2">Menu Engineering (last 30 days)</p>
+                    <div className="flex flex-wrap gap-3">
+                      {(['star', 'puzzle', 'plowhorse', 'dog'] as const).map((cat) => (
+                        <div key={cat} className="flex items-center gap-1.5">
+                          <span className="text-base">{CATEGORY_META[cat].emoji}</span>
+                          <span className="text-sm font-bold text-slate-900">{cats[cat] ?? 0}</span>
+                          <span className="text-xs text-slate-500">{CATEGORY_META[cat].label}{(cats[cat] ?? 0) !== 1 ? 's' : ''}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <Link
+                    href="/reports/menu-engineering"
+                    className="text-xs font-medium text-slate-600 hover:text-slate-900 border border-slate-300 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 transition-colors shrink-0 ml-4"
+                  >
+                    Full analysis →
+                  </Link>
+                </div>
+              </Card>
+            )
+          })()}
 
           {/* Main table */}
           <Card padding="none">
