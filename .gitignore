@@ -44,3 +44,5 @@ prisma/dev.db-wal
 
 # local env
 .env
+
+.vercel
