@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
+import { DeleteButton } from '@/components/ui/DeleteButton'
 
 export default async function SupplierPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -22,7 +23,25 @@ export default async function SupplierPage({ params }: { params: Promise<{ id: s
     <div className="space-y-6">
       <PageHeader
         title={supplier.name}
-        action={{ label: 'Edit', href: `/suppliers/${id}/edit` }}
+        actions={
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/suppliers/${id}/edit`}
+              className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors"
+            >
+              Edit
+            </Link>
+            <DeleteButton
+              endpoint={`/api/suppliers/${id}`}
+              redirectTo="/suppliers"
+              label="Delete Supplier"
+              confirmTitle="Delete this supplier?"
+              confirmMessage="This will permanently delete the supplier and all their contact details. This cannot be undone."
+              disabled={supplier.invoices.length > 0}
+              disabledReason="This supplier has invoices and cannot be deleted. Delete or reassign all invoices for this supplier first."
+            />
+          </div>
+        }
       />
 
       <div className="grid grid-cols-2 gap-4">

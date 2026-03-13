@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui/Card'
+import { DeleteButton } from '@/components/ui/DeleteButton'
 
 export default async function InvoicePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -34,6 +35,15 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
       <PageHeader
         title={invoice.reference ?? `Invoice #${invoice.id}`}
         description={`${invoice.supplier.name} · ${new Date(invoice.invoice_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`}
+        actions={
+          <DeleteButton
+            endpoint={`/api/invoices/${id}`}
+            redirectTo="/invoices"
+            label="Delete Invoice"
+            confirmTitle="Delete this invoice?"
+            confirmMessage="This will permanently delete the invoice and all its line items. Important: ingredient prices that were updated when this invoice was processed will NOT be rolled back — they will remain at their current values. Any cost snapshots linked to this invoice will be kept but will lose their invoice reference. This cannot be undone."
+          />
+        }
       />
 
       <div className="grid grid-cols-3 gap-4">
