@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { ingredientSchema } from '@/lib/validations/ingredient'
 
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { allergen_ids, ...data } = ingredientSchema.parse(body)
 
-    const ingredient = await prisma.$transaction(async (tx) => {
+    const ingredient = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const created = await tx.ingredient.create({ data })
 
       if (allergen_ids.length > 0) {

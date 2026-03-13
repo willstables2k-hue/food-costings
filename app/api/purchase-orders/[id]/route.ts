@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { updatePurchaseOrderSchema } from '@/lib/validations/purchaseOrder'
 
@@ -24,7 +25,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const body = await request.json()
     const data = updatePurchaseOrderSchema.parse(body)
 
-    const order = await prisma.$transaction(async (tx) => {
+    const order = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updated = await tx.purchaseOrder.update({
         where: { id: parseInt(id) },
         data: {

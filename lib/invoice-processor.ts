@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client'
+import type { PrismaClient, Prisma } from '@prisma/client'
 import { getConversionFactor } from './unit-converter'
 import { calculateRecipeCost } from './cost-calculator'
 
@@ -27,7 +27,7 @@ export async function processInvoice(
   input: CreateInvoiceInput,
   prisma: PrismaClient
 ): Promise<ProcessInvoiceResult> {
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // 1. Create Invoice record
     const invoice = await tx.invoice.create({
       data: {

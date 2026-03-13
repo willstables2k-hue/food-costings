@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { getConversionFactor } from '@/lib/unit-converter'
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const data = createSchema.parse(body)
 
-    const count = await prisma.$transaction(async (tx) => {
+    const count = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const created = await tx.stockCount.create({
         data: {
           name: data.name,

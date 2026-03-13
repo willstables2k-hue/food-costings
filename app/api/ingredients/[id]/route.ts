@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { ingredientSchema } from '@/lib/validations/ingredient'
 
@@ -29,7 +30,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const { allergen_ids, ...data } = ingredientSchema.parse(body)
     const ingredientId = parseInt(id)
 
-    const ingredient = await prisma.$transaction(async (tx) => {
+    const ingredient = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.ingredient.update({ where: { id: ingredientId }, data })
 
       await tx.ingredientAllergen.deleteMany({ where: { ingredient_id: ingredientId } })
