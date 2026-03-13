@@ -2,7 +2,9 @@ import { PrismaLibSql } from '@prisma/adapter-libsql'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
-const adapter = new PrismaLibSql({ url: process.env.DATABASE_URL! })
+const url = process.env.TURSO_DATABASE_URL ?? process.env.DATABASE_URL!
+const authToken = process.env.TURSO_AUTH_TOKEN
+const adapter = new PrismaLibSql({ url, authToken })
 const prisma = new PrismaClient({ adapter })
 
 const ALLERGENS = [
